@@ -13,12 +13,17 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"const response = pm.response\r",
+							"const response = pm.response;\r",
 							"\r",
 							"pm.test('The api should return a 200/201 status code', function () {\r",
 							"    pm.expect(pm.response.code).to.have.oneOf([201, 200], `Actual response is ${response.code}`);\r",
-							"    // pm.expect(response).to.eql('Created', 'Response body should be \"Created\"');\r",
+							"    pm.response.to.have.body;\r",
+							"    pm.expect(response.text()).to.eql('Created');\r",
 							"});\r",
+							"\r",
+							"// pm.test('The api should return a Created message', function () {\r",
+							"//     pm.execution.setNextRequest('Auth');\r",
+							"// });\r",
 							""
 						],
 						"type": "text/javascript",
@@ -29,7 +34,14 @@
 			],
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "x-mock-response-name",
+						"value": "Internal Server Error",
+						"type": "text",
+						"disabled": true
+					}
+				],
 				"url": {
 					"raw": "{{rb_url}}/ping",
 					"host": [
@@ -40,7 +52,36 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"name": "Internal Server Error",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{rb_url}}/ping",
+							"host": [
+								"{{rb_url}}"
+							],
+							"path": [
+								"ping"
+							]
+						}
+					},
+					"status": "Internal Server Error",
+					"code": 500,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date",
+							"domain": "",
+							"path": ""
+						}
+					],
+					"body": "Internal Server Error"
+				}
+			]
 		},
 		{
 			"name": "Auth",
@@ -51,14 +92,31 @@
 						"exec": [
 							"const response = pm.response.json();\r",
 							"\r",
-							"pm.test(\"Get token and make it as a variable\", function() {\r",
-							"    pm.expect(response.token).to.not.be.null;\r",
-							"    pm.collectionVariables.set('token', response.token)\r",
-							"});\r",
+							"pm.collectionVariables.set(\"token\", response.token);\r",
 							"\r",
 							"pm.test(\"Status code is 200\", function () {\r",
 							"    pm.response.to.have.status(200);\r",
-							"});"
+							"    pm.response.to.be.ok;\r",
+							"    pm.response.to.have.jsonBody('token');\r",
+							"    pm.expect(response.token).to.not.be.null;\r",
+							"    pm.expect(response.token).to.not.be.undefined;\r",
+							"    pm.expect(response.token).to.be.a('string'); \r",
+							"});\r",
+							"\r",
+							"\r",
+							"// pm.execution.setNextRequest(null);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
 						],
 						"type": "text/javascript",
 						"packages": {},
@@ -75,6 +133,24 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json"
+					},
+					{
+						"key": "x-mock-response-name",
+						"value": "Auth Token Missing",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "x-mock-response-name",
+						"value": "Auth",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "x-mock-response-name",
+						"value": "Auth Empty Username",
+						"type": "text",
+						"disabled": true
 					}
 				],
 				"body": {
@@ -91,7 +167,277 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"name": "Auth",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-mock-response-name",
+								"value": "Auth Token Missing",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "x-mock-response-name",
+								"value": "Auth",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "x-mock-response-name",
+								"value": "Auth Empty Username",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\" : \"admin\",\n    \"password\" : \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{rb_url}}/auth",
+							"host": [
+								"{{rb_url}}"
+							],
+							"path": [
+								"auth"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "Created"
+				},
+				{
+					"name": "Auth Empty Username",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\" : \"\",\n    \"password\" : \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{rb_url}}/auth",
+							"host": [
+								"{{rb_url}}"
+							],
+							"path": [
+								"auth"
+							]
+						}
+					},
+					"status": "Unprocessable Content",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"error\": \"Unprocessable Entity\",\n  \"message\": \"Username cannot be empty\"\n}\n"
+				},
+				{
+					"name": "Auth Empty Password",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\" : \"admin\",\n    \"password\" : \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{rb_url}}/auth",
+							"host": [
+								"{{rb_url}}"
+							],
+							"path": [
+								"auth"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"error\": \"Unprocessable Entity\",\n  \"message\": \"Password cannot be empty\"\n}\n"
+				},
+				{
+					"name": "Auth Empty Username & Password",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\" : \"\",\n    \"password\" : \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{rb_url}}/auth",
+							"host": [
+								"{{rb_url}}"
+							],
+							"path": [
+								"auth"
+							]
+						}
+					},
+					"status": "Unprocessable Content",
+					"code": 422,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"error\": \"Unprocessable Entity\",\n  \"message\": \"Username or passord cannot be empty\"\n}\n"
+				},
+				{
+					"name": "Auth Field Username Missing",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password\" : \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{rb_url}}/auth",
+							"host": [
+								"{{rb_url}}"
+							],
+							"path": [
+								"auth"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"error\": \"Bad Request\",\n  \"message\": \"Username is required\"\n}\n"
+				},
+				{
+					"name": "Auth Field Password Missing",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\" : \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{rb_url}}/auth",
+							"host": [
+								"{{rb_url}}"
+							],
+							"path": [
+								"auth"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"error\": \"Bad Request\",\n  \"message\": \"Password is required\"\n}\n"
+				}
+			]
 		},
 		{
 			"name": "Get All Bookings",
