@@ -151,6 +151,12 @@
 						"value": "Auth Empty Username",
 						"type": "text",
 						"disabled": true
+					},
+					{
+						"key": "Cookie",
+						"value": "",
+						"type": "text",
+						"disabled": true
 					}
 				],
 				"body": {
@@ -487,8 +493,8 @@
 							"const data = pm.response.json();\r",
 							"\r",
 							"const vars = {\r",
-							"    firstname: data.firstname,\r",
-							"    lastname: data.lastname,\r",
+							"    newFirstName: data.firstname,\r",
+							"    newLastName: data.lastname,\r",
 							"    totalprice: data.totalprice,\r",
 							"    depositpaid: data.depositpaid,\r",
 							"    checkin: data.bookingdates.checkin,\r",
@@ -533,11 +539,26 @@
 		},
 		{
 			"name": "Get Booking By Name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should equal 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{rb_url}}/booking?firstname={{firstname}}&lastname={{lastname}}",
+					"raw": "{{rb_url}}/booking?firstname={{newFirstName}}&lastname={{newLastName}}",
 					"host": [
 						"{{rb_url}}"
 					],
@@ -547,11 +568,11 @@
 					"query": [
 						{
 							"key": "firstname",
-							"value": "{{firstname}}"
+							"value": "{{newFirstName}}"
 						},
 						{
 							"key": "lastname",
-							"value": "{{lastname}}"
+							"value": "{{newLastName}}"
 						}
 					]
 				}
@@ -560,6 +581,21 @@
 		},
 		{
 			"name": "Get Bookings By Date",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response should be an empty array\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -587,6 +623,32 @@
 		},
 		{
 			"name": "Create Booking",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should equal 201\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -597,7 +659,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"firstname\": \"{{$randomFirstName}}\",\n    \"lastname\": \"{{$randomLastName}}\",\n    \"totalprice\": 111,\n    \"depositpaid\": {{$randomBoolean}},\n    \"bookingdates\": {\n        \"checkin\": \"{{$randomDateRecent}}\",\n        \"checkout\": \"{{$randomDateFuture}}\"\n    },\n    \"additionalneeds\": \"Breakfast\"\n}",
+					"raw": "{\n    \"firstname\": \"{{$randomFirstName}}\",\n    \"lastname\": \"{{$randomLastName}}\",\n    \"totalprice\": {{$randomPrice}},\n    \"depositpaid\": {{$randomBoolean}},\n    \"bookingdates\": {\n        \"checkin\": \"{{$randomDateRecent}}\",\n        \"checkout\": \"{{$randomDateFuture}}\"\n    },\n    \"additionalneeds\": \"{{$randomWords}}\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -625,7 +687,34 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {\r",
 							"    pm.response.to.have.status(200);\r",
-							"});"
+							"});\r",
+							"\r",
+							"pm.test(\"Name should be updated correctly\", function () {\r",
+							"    const response = pm.response.json();\r",
+							"    const firstName = pm.collectionVariables.get(\"updatedFirstName\");\r",
+							"    const lastName = pm.collectionVariables.get(\"updatedLastName\");\r",
+							"    pm.expect(response.firstname).to.eql(firstName);\r",
+							"    pm.expect(response.lastname).to.eql(lastName);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const name = {\r",
+							"    updatedFirstName   : pm.variables.replaceIn(\"{{$randomFirstName}}\"),\r",
+							"    updatedLastName    : pm.variables.replaceIn(\"{{$randomLastName}}\")\r",
+							"};\r",
+							"\r",
+							"for (let key in name) {\r",
+							"    pm.collectionVariables.set(key, name[key]);\r",
+							"};"
 						],
 						"type": "text/javascript",
 						"packages": {},
@@ -651,7 +740,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"firstname\" : \"{{$randomFirstName}}\",\n    \"lastname\" : \"Brand\",\n    \"totalprice\" : 111,\n    \"depositpaid\" : true,\n    \"bookingdates\" : {\n        \"checkin\" : \"2018-01-01\",\n        \"checkout\" : \"2019-01-01\"\n    },\n    \"additionalneeds\" : \"Breakfast\"\n}"
+					"raw": "{\n    \"firstname\" : \"{{updatedFirstName}}\",\n    \"lastname\" : \"{{updatedLastName}}\",\n    \"totalprice\" : 111,\n    \"depositpaid\" : true,\n    \"bookingdates\" : {\n        \"checkin\" : \"2018-01-01\",\n        \"checkout\" : \"2019-01-01\"\n    },\n    \"additionalneeds\" : \"Breakfast\"\n}"
 				},
 				"url": {
 					"raw": "{{rb_url}}/booking/{{bookingid}}",
@@ -675,7 +764,34 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {\r",
 							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Name should be updated correctly\", function () {\r",
+							"    const response = pm.response.json();\r",
+							"    const firstName = pm.collectionVariables.get(\"partialUpdatedFirstName\");\r",
+							"    const lastName = pm.collectionVariables.get(\"partialUpdatedLastName\");\r",
+							"    pm.expect(response.firstname).to.eql(firstName);\r",
+							"    pm.expect(response.lastname).to.eql(lastName);\r",
+							"    console.log(`${firstName} equal to ${response.firstname}`);\r",
 							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const name = {\r",
+							"    partialUpdatedFirstName   : pm.variables.replaceIn(\"{{$randomFirstName}}\"),\r",
+							"    partialUpdatedLastName    : pm.variables.replaceIn(\"{{$randomLastName}}\")\r",
+							"};\r",
+							"\r",
+							"for (let key in name) {\r",
+							"    pm.collectionVariables.set(key, name[key]);\r",
+							"};"
 						],
 						"type": "text/javascript",
 						"packages": {},
@@ -696,12 +812,12 @@
 					},
 					{
 						"key": "Cookie",
-						"value": "token=abc123"
+						"value": "token={{token}}"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"firstname\" : \"{{$randomFirstName}}\",\n    \"lastname\" : \"{{$randomLastName}}\"\n}"
+					"raw": "{\n    \"firstname\" : \"{{partialUpdatedFirstName}}\",\n    \"lastname\" : \"{{partialUpdatedLastName}}\"\n}"
 				},
 				"url": {
 					"raw": "{{rb_url}}/booking/{{bookingid}}",
@@ -723,9 +839,110 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code is 200\", function () {\r",
+							"pm.test(\"Status code is 204\", function () {\r",
 							"    pm.response.to.have.status(204);\r",
-							"});"
+							"});\r",
+							"\r",
+							"checkDeletedTheBookingId();\r",
+							"\r",
+							"function checkDeletedTheBookingId() {\r",
+							"    const rb_url = pm.environment.get(\"rb_url\");\r",
+							"    const bookingid = pm.collectionVariables.get(\"bookingid\");\r",
+							"    \r",
+							"    pm.sendRequest({\r",
+							"        url: `${rb_url}/booking`,\r",
+							"        method: \"GET\"\r",
+							"    }, function (err, res) {\r",
+							"        if (err) {\r",
+							"            console.error(err);\r",
+							"            return;\r",
+							"        } else {\r",
+							"            const response = res.json();\r",
+							"            const allBookingIds = response.map(item => item.bookingid);\r",
+							"            pm.test(\"Bookingid was deleted\", function () {\r",
+							"                pm.expect(allBookingIds).not.include(bookingid);\r",
+							"            });\r",
+							"            console.log(`Check deleted bookingid: ${bookingid}`);\r",
+							"        };\r",
+							"    });\r",
+							"};\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const _ = require('lodash');\r",
+							"const rb_url = pm.environment.get(\"rb_url\");\r",
+							"\r",
+							"// function loginAndGetBooking() {\r",
+							"//     pm.sendRequest({\r",
+							"//         url: `${rb_url}/auth`,\r",
+							"//         method: \"POST\",\r",
+							"//         header: {\r",
+							"//             \"Content-Type\": \"application/json\"\r",
+							"//         },\r",
+							"//         body: {\r",
+							"//             mode: \"raw\",\r",
+							"//             raw: JSON.stringify({\r",
+							"//                 username: \"admin\",\r",
+							"//                 password: \"password123\"\r",
+							"//             })\r",
+							"//         }\r",
+							"//     }, function (err, res) {\r",
+							"//         if (err) {\r",
+							"//             console.log(\"Auth error:\", err);\r",
+							"//             return;\r",
+							"//         }\r",
+							"\r",
+							"//         const loginRes = res.json();\r",
+							"//         if (!loginRes.token) {\r",
+							"//             console.log(\"❌ Token not found in response\");\r",
+							"//             return;\r",
+							"//         }\r",
+							"\r",
+							"//         pm.collectionVariables.set(\"token\", loginRes.token);\r",
+							"//         console.log(\"Token saved!!:\", loginRes.token);\r",
+							"\r",
+							"//         getRandomBooking();\r",
+							"//     });\r",
+							"// };\r",
+							"\r",
+							"\r",
+							"function getRandomBooking() {\r",
+							"    pm.sendRequest({\r",
+							"        url: `${rb_url}/booking`,\r",
+							"        method: \"GET\",\r",
+							"        header: {\r",
+							"            \"Accept\": \"application/json\",\r",
+							"            \"Authorization\": \"Bearer \" + pm.collectionVariables.get(\"token\")\r",
+							"        }\r",
+							"    }, function (err, res) {\r",
+							"        if (err) {\r",
+							"            console.log(\"Booking error:\", err);\r",
+							"            return;\r",
+							"        }\r",
+							"\r",
+							"        const response = res.json();\r",
+							"\r",
+							"        if (Array.isArray(response) && response.length > 0) {\r",
+							"            const randomBooking = _.sample(response);\r",
+							"            pm.collectionVariables.set(\"bookingid\", randomBooking.bookingid);\r",
+							"            console.log(\"Random booking ID saved!!:\", randomBooking.bookingid);\r",
+							"        } else {\r",
+							"            console.log(\"No bookings found in response\");\r",
+							"        };\r",
+							"    });\r",
+							"};\r",
+							"getRandomBooking();\r",
+							"\r",
+							"// loginAndGetBooking();\r",
+							""
 						],
 						"type": "text/javascript",
 						"packages": {},
@@ -801,14 +1018,6 @@
 			"value": ""
 		},
 		{
-			"key": "firstname",
-			"value": ""
-		},
-		{
-			"key": "lastname",
-			"value": ""
-		},
-		{
 			"key": "totalprice",
 			"value": ""
 		},
@@ -834,6 +1043,34 @@
 		},
 		{
 			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "cookie",
+			"value": ""
+		},
+		{
+			"key": "updatedFirstName",
+			"value": ""
+		},
+		{
+			"key": "updatedLastName",
+			"value": ""
+		},
+		{
+			"key": "newFirstName",
+			"value": ""
+		},
+		{
+			"key": "newLastName",
+			"value": ""
+		},
+		{
+			"key": "partialUpdatedFirstName",
+			"value": ""
+		},
+		{
+			"key": "partialUpdatedLastName",
 			"value": ""
 		}
 	]
