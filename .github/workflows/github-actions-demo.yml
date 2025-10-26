@@ -14,5 +14,5 @@ jobs:
 
       - name: Run API Tests
         run: |
-          newman run "PostmanReportsTestPractice/Restful_Booker.postman_collection.json" \
+          newman run "PostmanReportsTestPractice/Restful Booker.postman_collection.json" \
           -e "PostmanReportsTestPractice/Production.postman_environment.json"
